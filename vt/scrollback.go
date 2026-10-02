@@ -37,8 +37,7 @@ func (s *Scrollback) Push(line uv.Line) {
 	// This helps with wrapping and window resizing.
 	lastNonEmpty := -1
 	for i := len(line) - 1; i >= 0; i-- {
-		c := &line[i]
-		if !c.IsZero() && !c.Equal(&uv.EmptyCell) {
+		if !blankCell(&line[i]) {
 			lastNonEmpty = i
 			break
 		}
@@ -48,10 +47,26 @@ func (s *Scrollback) Push(line uv.Line) {
 	cloned := slices.Clone(line[:lastNonEmpty+1])
 
 	if len(s.lines) >= s.maxLines {
-		// Remove oldest line and append new one
-		s.lines = slices.Delete(s.lines, 0, 1)
+		// Remove oldest line and append new one. Slicing past it rather
+		// than shifting every line down keeps a push O(1): append moves
+		// the lines to a new array only once the old one's room runs out.
+		s.lines[0] = nil
+		s.lines = s.lines[1:]
 	}
 	s.lines = append(s.lines, cloned)
+}
+
+// blankCell reports whether c is the zero cell or [uv.EmptyCell]. It looks
+// at the content first, so a cell of text is told apart without comparing
+// styles, and a plain blank without comparing colors.
+func blankCell(c *uv.Cell) bool {
+	switch {
+	case c.Content != " " && c.Content != "":
+		return false
+	case c.Content == " " && c.Width == 1 && c.Style.IsZero() && c.Link.IsZero():
+		return true
+	}
+	return c.IsZero() || c.Equal(&uv.EmptyCell)
 }
 
 // PushN adds n lines from the buffer starting at line y to the scrollback.

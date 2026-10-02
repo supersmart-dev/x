@@ -37,7 +37,10 @@ func (e *Emulator) handlePrint(r rune) {
 		// Two printable ASCII characters in a row is the common case by a wide
 		// margin, and needs no segmenting at all.
 		if len(e.grapheme) == 1 && printableASCII(rune(e.grapheme[0])) {
-			e.handleGrapheme(string(e.grapheme[0]), 1)
+			// A one-byte slice makes a string without allocating (the
+			// runtime keeps them all); the byte converted as a rune would
+			// allocate one per character.
+			e.handleGrapheme(string(e.grapheme[:1]), 1)
 			e.grapheme = utf8.AppendRune(e.grapheme[:0], r)
 			return
 		}
