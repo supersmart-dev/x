@@ -25,4 +25,4 @@ require (
 	golang.org/x/sys v0.46.0 // indirect
 )
 
-replace github.com/charmbracelet/ultraviolet => ../../ultraviolet
+replace github.com/charmbracelet/ultraviolet => github.com/supersmart-dev/ultraviolet v0.0.0-20261002002504-552dc630a84f
